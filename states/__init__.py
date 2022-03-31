@@ -1,1 +1,1 @@
-from .poll_states import Test
+from .poll_states import PollStates

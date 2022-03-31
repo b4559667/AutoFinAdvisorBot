@@ -2,7 +2,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 
 
 # Состояния вопросов
-class Test(StatesGroup):
+class PollStates(StatesGroup):
     q1_income_state = State()
     q2_start_invest_state = State()
     q3_end_invest_state = State()
