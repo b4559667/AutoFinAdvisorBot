@@ -8,8 +8,8 @@ class Calculations:
         self.__t1 = float(t1)
         self.__t2 = float(t2)
         self.__t3 = float(t3)
-        self.__r = float(r / 100)
-        self.__h = float(h / 100)
+        self.__r = float(r) / 100
+        self.__h = float(h) / 100
         self.__i = 0.063
         self.__rr = round(((1 + self.__r) / (1 + self.__i)) - 1, 3)
 

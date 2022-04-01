@@ -8,5 +8,5 @@ class IsTGreaterZ(BoundFilter):
         if float(message.text) > 0:
             return True
         else:
-            await message.answer("перевірка умови додатності t1")
+            await message.answer("Ваш вік має бути додатним!")
             return False

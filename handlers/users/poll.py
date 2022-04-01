@@ -21,7 +21,7 @@ async def cancel_poll(message: types.Message, state: FSMContext):
 
 @dp.message_handler(Command("start_poll"), state=None)
 async def start_poll(message: types.Message):
-    await message.answer("Який ви маєте середній щорічний дохід? <em>Наприклад: 100000 грн</em>")
+    await message.answer("Який ви маєте середній щорічний прибуток? <em>Наприклад: 100000 грн</em>")
     await PollStates.q1_income_state.set()
 
 
@@ -34,16 +34,14 @@ async def answer_start_age(message: types.Message, state: FSMContext):
     await PollStates.q2_start_invest_state.set()
 
 
-###################################
 @dp.message_handler(IsNumber(), IsTGreaterZ(), state=PollStates.q2_start_invest_state)
 async def answer_end_age(message: types.Message, state: FSMContext):
     start_invest_data = message.text
     await state.update_data(start_invest_data=start_invest_data)
-    await message.answer("В якому віці Ви плануєте завершити власну програму заощадження? <em>Наприклад: 60 років</em>")
+    await message.answer("В якому віці ви плануєте завершити власну програму заощадження? <em>Наприклад: 60 років</em>")
     await PollStates.q3_end_invest_state.set()
 
 
-#############################################################
 @dp.message_handler(IsNumber(), state=PollStates.q3_end_invest_state)
 async def answer_use_age(message: types.Message, state: FSMContext):
     end_invest_data = message.text
@@ -51,10 +49,10 @@ async def answer_use_age(message: types.Message, state: FSMContext):
     if float(data['start_invest_data']) < float(end_invest_data):
         await state.update_data(end_invest_data=end_invest_data)
         await message.answer(
-            "До якого віку Ви плануєте використати власний фонд заощадження? <em>Наприклад: 80 років</em>")
+            "До якого віку ви плануєте використовувати власний фонд заощадження? <em>Наприклад: 80 років</em>")
         await PollStates.q4_use_invest_state.set()
     else:
-        await message.reply("перевірка умови t2>t1")  # notify user
+        await message.answer("Вік завершення програми заощаджень має бути більшим за вік запровадження!")  # notify user
 
         # await answer_end_age(message, state) multiple variants
         @dp.message_handler(IsNumber(), IsTGreaterZ(), state=PollStates.q2_start_invest_state)
@@ -62,11 +60,10 @@ async def answer_use_age(message: types.Message, state: FSMContext):
             start_invest_data = message.text
             await state.update_data(start_invest_data=start_invest_data)
             await message.answer(
-                "В якому віці Ви плануєте завершити власну програму заощадження? <em>Наприклад: 60 років</em>")
+                "В якому віці ви плануєте завершити власну програму заощадження? <em>Наприклад: 60 років</em>")
             await PollStates.q3_end_invest_state.set()
 
 
-################################################################
 @dp.message_handler(IsNumber(), state=PollStates.q4_use_invest_state)
 async def answer_interest(message: types.Message, state: FSMContext):
     use_invest_data = message.text
@@ -77,7 +74,7 @@ async def answer_interest(message: types.Message, state: FSMContext):
             "Яку номінальну річну відсоткову ставку на заощадження Ви очікуєте отримувати? <em>Наприклад: 10 %</em>")
         await PollStates.q5_rate_state.set()
     else:
-        await message.reply("перевірка умови t3>t2")
+        await message.answer("Вік використання програми заощаджень має бути більшим за вік завершення!")
 
         @dp.message_handler(IsNumber(), state=PollStates.q3_end_invest_state)
         async def answer_use_age(message: types.Message, state: FSMContext):
@@ -106,14 +103,15 @@ async def display_info(message: types.Message, state: FSMContext):  # answer dev
     await state.update_data(rate_dv_data=rate_dv_data)
     data = await state.get_data()
     await message.answer("Введена інформація: \n\n"
-                         "Cередній щорічний дохід - {avg_income_data} грн\n"
+                         "Cередній щорічний прибуток - {avg_income_data} грн\n"
                          "Вік запровадження програми заощаджень - {start_invest_data} років\n"
                          "Вік завершення програми заощаджень - {end_invest_data} років\n"
                          "Вік використання заощаджень - {use_invest_data} років\n"
                          "Номінальна річна відсоткова ставка - {rate_data}%\n"
                          "Відсоткове відхилення від номінальної річної ставки - {rate_dv_data}%\n"
-                         "\nЧи коректно заповнена інформація? <em>Ви можете заново пройти опитування "
-                         "для виправлення помилок використовуючи команду</em> /correct_answers\n".format(
+                         "\nЧи коректно заповнена інформація? <em>\nВи можете знову пройти опитування "
+                         "для виправлення помилок використовуючи команду</em> - /correct_answers\n"
+                         "\nДля отримання результату: \n<em>Використовуйте команду</em> - /generate_result".format(
         avg_income_data=data.get("avg_income_data"), start_invest_data=data.get("start_invest_data"),
         end_invest_data=data.get("end_invest_data"), use_invest_data=data.get("use_invest_data"),
         rate_data=data.get("rate_data"), rate_dv_data=data.get("rate_dv_data")))
@@ -135,9 +133,9 @@ async def generate_result(message: types.Message, state: FSMContext):
                              data['use_invest_data'], data['rate_data'], data['rate_dv_data'])
     result = calculate.calc_result()
     await message.answer(
-        "Для забезпечення постійного рівня споживання від {start_invest_data} до "
-        "{use_invest_data} років у розмірі {C} грн. "
-        "Вам потрібно щороку заощаджувати {S} грн. на рік під номінальну процентну ставку {rate_data}%.".format(
+        "Для забезпечення постійного рівня споживання від <em>{start_invest_data} до "
+        "{use_invest_data}</em> років у розмірі <em>{C} грн.</em> "
+        "Вам потрібно щороку заощаджувати <em>{S} грн.</em> на рік під номінальну відсоткову ставку <em>{rate_data}%.</em>".format(
             start_invest_data=data["start_invest_data"],
             use_invest_data=data["use_invest_data"],
             C=result[1], S=result[0],

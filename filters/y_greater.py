@@ -8,5 +8,5 @@ class IsYGreaterZ(BoundFilter):
         if float(message.text) > 0:
             return True
         else:
-            await message.answer("перевірка умови додатності доходу (CHISLA)")
+            await message.answer("Число має бути додатним!")
             return False

@@ -6,9 +6,9 @@ class IsDevInBound(BoundFilter):
 
     async def check(self, message: types.Message) -> bool:
         content = float(message.text)
-        await message.answer(message.text)
+        #g await message.answer(message.text)
         if 0 < content <= 100:
             return True
         else:
-            await message.answer('перевірка умови h u gran 0 i 100')
+            await message.answer('Число має бути більше 0 та менше або дорівнювати 100')
             return False
