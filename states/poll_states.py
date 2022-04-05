@@ -9,4 +9,5 @@ class PollStates(StatesGroup):
     q4_use_invest_state = State()
     q5_rate_state = State()
     q6_rate_dv_state = State()
+    q_inflation_rate_state = State()
     generate_result_state = State()

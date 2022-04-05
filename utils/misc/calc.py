@@ -3,14 +3,14 @@ from math import pow
 
 class Calculations:
 
-    def __init__(self, Y, t1, t2, t3, r, h):
+    def __init__(self, Y, t1, t2, t3, r, h, i):
         self.__Y = float(Y)
         self.__t1 = float(t1)
         self.__t2 = float(t2)
         self.__t3 = float(t3)
         self.__r = float(r) / 100
         self.__h = float(h) / 100
-        self.__i = 0.063
+        self.__i = float(i) / 100
         self.__rr = round(((1 + self.__r) / (1 + self.__i)) - 1, 3)
 
     def __future_annuity_value(self):

@@ -1,7 +1,7 @@
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command
 
-from filters import IsNumber, IsYGreaterZ, IsTGreaterZ, IsDevInBound
+from filters import IsNumber, IsYGreaterZ, IsTGreaterZ, IsDevInBound, IsWholeNumber
 from loader import dp
 from aiogram import types
 
@@ -34,7 +34,7 @@ async def answer_start_age(message: types.Message, state: FSMContext):
     await PollStates.q2_start_invest_state.set()
 
 
-@dp.message_handler(IsNumber(), IsTGreaterZ(), state=PollStates.q2_start_invest_state)
+@dp.message_handler(IsNumber(), IsWholeNumber(), IsTGreaterZ(), state=PollStates.q2_start_invest_state)
 async def answer_end_age(message: types.Message, state: FSMContext):
     start_invest_data = message.text
     await state.update_data(start_invest_data=start_invest_data)
@@ -42,7 +42,7 @@ async def answer_end_age(message: types.Message, state: FSMContext):
     await PollStates.q3_end_invest_state.set()
 
 
-@dp.message_handler(IsNumber(), state=PollStates.q3_end_invest_state)
+@dp.message_handler(IsNumber(), IsWholeNumber(), state=PollStates.q3_end_invest_state)
 async def answer_use_age(message: types.Message, state: FSMContext):
     end_invest_data = message.text
     data = await state.get_data()
@@ -55,7 +55,7 @@ async def answer_use_age(message: types.Message, state: FSMContext):
         await message.answer("Вік завершення програми заощаджень має бути більшим за вік запровадження!")  # notify user
 
         # await answer_end_age(message, state) multiple variants
-        @dp.message_handler(IsNumber(), IsTGreaterZ(), state=PollStates.q2_start_invest_state)
+        @dp.message_handler(IsNumber(), IsTGreaterZ(), IsWholeNumber(), state=PollStates.q2_start_invest_state)
         async def answer_end_age(message: types.Message, state: FSMContext):
             start_invest_data = message.text
             await state.update_data(start_invest_data=start_invest_data)
@@ -64,7 +64,7 @@ async def answer_use_age(message: types.Message, state: FSMContext):
             await PollStates.q3_end_invest_state.set()
 
 
-@dp.message_handler(IsNumber(), state=PollStates.q4_use_invest_state)
+@dp.message_handler(IsNumber(), IsWholeNumber(), state=PollStates.q4_use_invest_state)
 async def answer_interest(message: types.Message, state: FSMContext):
     use_invest_data = message.text
     data = await state.get_data()
@@ -76,7 +76,7 @@ async def answer_interest(message: types.Message, state: FSMContext):
     else:
         await message.answer("Вік використання програми заощаджень має бути більшим за вік завершення!")
 
-        @dp.message_handler(IsNumber(), state=PollStates.q3_end_invest_state)
+        @dp.message_handler(IsNumber(), IsWholeNumber(), state=PollStates.q3_end_invest_state)
         async def answer_use_age(message: types.Message, state: FSMContext):
             end_invest_data = message.text
             data = await state.get_data()
@@ -93,14 +93,25 @@ async def answer_deviation(message: types.Message, state: FSMContext):
     await state.update_data(rate_data=rate_data)
     await message.answer(
         "Яке зменшення у відсотках від визначеної вами середньої дохідності"
-        " буде для вас критичним у прийнятті рішення переглянути (припинити) програму заощаджень? <em>Наприклад: 30%</em>")
+        " буде для вас критичним у прийнятті рішення переглянути"
+        " (припинити) програму заощаджень? <em>Наприклад: 30%</em>")
     await PollStates.q6_rate_dv_state.set()
 
 
 @dp.message_handler(IsNumber(), IsDevInBound(), state=PollStates.q6_rate_dv_state)
-async def display_info(message: types.Message, state: FSMContext):  # answer deviation
+async def answer_inflation(message: types.Message, state: FSMContext):
     rate_dv_data = message.text
     await state.update_data(rate_dv_data=rate_dv_data)
+    await message.answer("Яке значення показника інфляції використовувати для обчислень? Наприклад: 6.3%\n"
+                         "\nДля встановлення показника за замовчуванням (середнє значення за останні 3 роки):"
+                         "\n<em>Використовуйте команду</em> - /set_default\n")
+    await PollStates.q_inflation_rate_state.set()
+
+
+@dp.message_handler(Command("set_default"), state=PollStates.q_inflation_rate_state)
+async def set_default(message: types.Message, state: FSMContext):
+    inflation_rate = 6.3
+    await state.update_data(inflation_rate=inflation_rate)
     data = await state.get_data()
     await message.answer("Введена інформація: \n\n"
                          "Cередній щорічний прибуток - {avg_income_data} грн\n"
@@ -109,13 +120,37 @@ async def display_info(message: types.Message, state: FSMContext):  # answer dev
                          "Вік використання заощаджень - {use_invest_data} років\n"
                          "Номінальна річна відсоткова ставка - {rate_data}%\n"
                          "Відсоткове відхилення від номінальної річної ставки - {rate_dv_data}%\n"
+                         "Показник інфляції - {inflation_rate}%\n"
                          "\nЧи коректно заповнена інформація? <em>\nВи можете знову пройти опитування "
                          "для виправлення помилок використовуючи команду</em> - /correct_answers\n"
                          "\nДля отримання результату: \n<em>Використовуйте команду</em> - /generate_result".format(
         avg_income_data=data.get("avg_income_data"), start_invest_data=data.get("start_invest_data"),
         end_invest_data=data.get("end_invest_data"), use_invest_data=data.get("use_invest_data"),
-        rate_data=data.get("rate_data"), rate_dv_data=data.get("rate_dv_data")))
+        rate_data=data.get("rate_data"), rate_dv_data=data.get("rate_dv_data"),
+        inflation_rate=data.get("inflation_rate")))
+    await PollStates.generate_result_state.set()
 
+
+@dp.message_handler(IsNumber(), IsDevInBound(), state=PollStates.q_inflation_rate_state)
+async def display_info(message: types.Message, state: FSMContext):
+    inflation_rate = message.text
+    await state.update_data(inflation_rate=inflation_rate)
+    data = await state.get_data()
+    await message.answer("Введена інформація: \n\n"
+                         "Cередній щорічний прибуток - {avg_income_data} грн\n"
+                         "Вік запровадження програми заощаджень - {start_invest_data} років\n"
+                         "Вік завершення програми заощаджень - {end_invest_data} років\n"
+                         "Вік використання заощаджень - {use_invest_data} років\n"
+                         "Номінальна річна відсоткова ставка - {rate_data}%\n"
+                         "Відсоткове відхилення від номінальної річної ставки - {rate_dv_data}%\n"
+                         "Показник інфляції - {inflation_rate}%\n"
+                         "\nЧи коректно заповнена інформація? <em>\nВи можете знову пройти опитування "
+                         "для виправлення помилок використовуючи команду</em> - /correct_answers\n"
+                         "\nДля отримання результату: \n<em>Використовуйте команду</em> - /generate_result".format(
+        avg_income_data=data.get("avg_income_data"), start_invest_data=data.get("start_invest_data"),
+        end_invest_data=data.get("end_invest_data"), use_invest_data=data.get("use_invest_data"),
+        rate_data=data.get("rate_data"), rate_dv_data=data.get("rate_dv_data"),
+        inflation_rate=data.get("inflation_rate")))
     await PollStates.generate_result_state.set()
 
 
@@ -130,12 +165,13 @@ async def generate_result(message: types.Message, state: FSMContext):
     data = await state.get_data()
     calculate = Calculations(data['avg_income_data'], data['start_invest_data'],
                              data['end_invest_data'],
-                             data['use_invest_data'], data['rate_data'], data['rate_dv_data'])
+                             data['use_invest_data'], data['rate_data'], data['rate_dv_data'], data['inflation_rate'])
     result = calculate.calc_result()
     await message.answer(
         "Для забезпечення постійного рівня споживання від <em>{start_invest_data} до "
         "{use_invest_data}</em> років у розмірі <em>{C} грн.</em> "
-        "Вам потрібно щороку заощаджувати <em>{S} грн.</em> на рік під номінальну відсоткову ставку <em>{rate_data}%.</em>".format(
+        "Вам потрібно щороку заощаджувати <em>{S} грн."
+        "</em> на рік під номінальну відсоткову ставку <em>{rate_data}%.</em>".format(
             start_invest_data=data["start_invest_data"],
             use_invest_data=data["use_invest_data"],
             C=result[1], S=result[0],
