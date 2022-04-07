@@ -2,6 +2,8 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Command
 
 from filters import IsNumber, IsYGreaterZ, IsTGreaterZ, IsDevInBound, IsWholeNumber
+from filters.age_filter import IsLess125, IsLess250
+from filters.number_filter import IsLess
 from loader import dp
 from aiogram import types
 
@@ -25,7 +27,7 @@ async def start_poll(message: types.Message):
     await PollStates.q1_income_state.set()
 
 
-@dp.message_handler(IsNumber(), IsYGreaterZ(), state=PollStates.q1_income_state)
+@dp.message_handler(IsNumber(), IsYGreaterZ(), IsLess(), state=PollStates.q1_income_state)
 async def answer_start_age(message: types.Message, state: FSMContext):
     avg_income_data = message.text
     await state.update_data(avg_income_data=avg_income_data)
@@ -34,7 +36,7 @@ async def answer_start_age(message: types.Message, state: FSMContext):
     await PollStates.q2_start_invest_state.set()
 
 
-@dp.message_handler(IsNumber(), IsWholeNumber(), IsTGreaterZ(), state=PollStates.q2_start_invest_state)
+@dp.message_handler(IsNumber(), IsWholeNumber(), IsTGreaterZ(), IsLess125(), state=PollStates.q2_start_invest_state)
 async def answer_end_age(message: types.Message, state: FSMContext):
     start_invest_data = message.text
     await state.update_data(start_invest_data=start_invest_data)
@@ -42,7 +44,7 @@ async def answer_end_age(message: types.Message, state: FSMContext):
     await PollStates.q3_end_invest_state.set()
 
 
-@dp.message_handler(IsNumber(), IsWholeNumber(), state=PollStates.q3_end_invest_state)
+@dp.message_handler(IsNumber(), IsWholeNumber(), IsLess250(), state=PollStates.q3_end_invest_state)
 async def answer_use_age(message: types.Message, state: FSMContext):
     end_invest_data = message.text
     data = await state.get_data()
@@ -54,8 +56,8 @@ async def answer_use_age(message: types.Message, state: FSMContext):
     else:
         await message.answer("Вік завершення програми заощаджень має бути більшим за вік запровадження!")  # notify user
 
-        # await answer_end_age(message, state) multiple variants
-        @dp.message_handler(IsNumber(), IsTGreaterZ(), IsWholeNumber(), state=PollStates.q2_start_invest_state)
+        @dp.message_handler(IsNumber(), IsTGreaterZ(), IsWholeNumber(), IsLess250(),
+                            state=PollStates.q2_start_invest_state)
         async def answer_end_age(message: types.Message, state: FSMContext):
             start_invest_data = message.text
             await state.update_data(start_invest_data=start_invest_data)
@@ -64,7 +66,7 @@ async def answer_use_age(message: types.Message, state: FSMContext):
             await PollStates.q3_end_invest_state.set()
 
 
-@dp.message_handler(IsNumber(), IsWholeNumber(), state=PollStates.q4_use_invest_state)
+@dp.message_handler(IsNumber(), IsWholeNumber(), IsLess250(), state=PollStates.q4_use_invest_state)
 async def answer_interest(message: types.Message, state: FSMContext):
     use_invest_data = message.text
     data = await state.get_data()
@@ -76,7 +78,7 @@ async def answer_interest(message: types.Message, state: FSMContext):
     else:
         await message.answer("Вік використання програми заощаджень має бути більшим за вік завершення!")
 
-        @dp.message_handler(IsNumber(), IsWholeNumber(), state=PollStates.q3_end_invest_state)
+        @dp.message_handler(IsNumber(), IsWholeNumber(), IsLess250(), state=PollStates.q3_end_invest_state)
         async def answer_use_age(message: types.Message, state: FSMContext):
             end_invest_data = message.text
             data = await state.get_data()

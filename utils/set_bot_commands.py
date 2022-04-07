@@ -7,6 +7,7 @@ async def set_default_commands(dp):
             types.BotCommand("start", "Розпочати роботу з ботом"),
             types.BotCommand("help", "Отримати список команд"),
             types.BotCommand("start_poll", "Розпочати опитування"),
+            types.BotCommand("set_default", "Встановити показник інфляції за замовчуванням"),
             types.BotCommand("correct_answers", "Розпочати опитування для виправлення помилок"),
             types.BotCommand("generate_result", "Отримати результати розрахунків"),
             types.BotCommand("cancel_poll", "Зупинити опитування")
